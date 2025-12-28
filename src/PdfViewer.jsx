@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 
-// pdf.js worker (already working for you)
+// ✅ Correct worker for Vite + pdfjs v5
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 	"pdfjs-dist/build/pdf.worker.min.mjs",
 	import.meta.url
@@ -9,15 +9,15 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 export default function PdfViewer() {
 	const [numPages, setNumPages] = useState(null);
-	const [containerWidth, setContainerWidth] = useState(800);
+	const [pageWidth, setPageWidth] = useState(800);
 
-	// Update width responsively
+	// Responsive width calculation
 	useEffect(() => {
 		const updateWidth = () => {
-			const padding = 32;
-			const maxWidth = 900; // 👈 looks like normal PDF width
-			const width = Math.min(window.innerWidth - padding, maxWidth);
-			setContainerWidth(width);
+			const horizontalPadding = 32;
+			const maxPdfWidth = 900; // 👈 natural PDF width (important)
+			const width = Math.min(window.innerWidth - horizontalPadding, maxPdfWidth);
+			setPageWidth(width);
 		};
 
 		updateWidth();
@@ -25,44 +25,46 @@ export default function PdfViewer() {
 		return () => window.removeEventListener("resize", updateWidth);
 	}, []);
 
-	function onLoadSuccess({ numPages }) {
+	const onLoadSuccess = ({ numPages }) => {
 		setNumPages(numPages);
-	}
+	};
 
 	return (
-		<div style={styles.pageWrapper}>
-			<div style={{ ...styles.pdfContainer, width: containerWidth }}>
+		<div style={styles.wrapper}>
+			<div style={styles.container}>
 				<Document
 					file='/catalog.pdf'
 					onLoadSuccess={onLoadSuccess}
 					loading='Loading catalog…'>
-					{Array.from(new Array(numPages), (_, index) => (
-						<Page
-							pageNumber={index + 1}
-							width={containerWidth}
-							renderTextLayer={false}
-							renderAnnotationLayer={false}
-						/>
-					))}
+					{numPages &&
+						Array.from({ length: numPages }, (_, index) => (
+							<Page
+								key={`page_${index + 1}`}
+								pageNumber={index + 1}
+								width={pageWidth}
+								renderTextLayer={false}
+								renderAnnotationLayer={false}
+							/>
+						))}
 				</Document>
 			</div>
 		</div>
 	);
 }
+
 const styles = {
-	pageWrapper: {
+	wrapper: {
 		minHeight: "100vh",
 		background: "#1e1e1e",
 		display: "flex",
-		justifyContent: "center", // ✅ CENTER HORIZONTALLY
-		alignItems: "flex-start",
+		justifyContent: "center",
 		padding: "24px 16px",
 	},
 
-	pdfContainer: {
+	container: {
 		width: "100%",
-		maxWidth: "900px", // ✅ NORMAL PDF WIDTH
-		margin: "0 auto", // ✅ FORCE CENTER
+		maxWidth: "900px", // 👈 keeps it centered on large screens
+		margin: "0 auto",
 		display: "flex",
 		flexDirection: "column",
 		alignItems: "center",
